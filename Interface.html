@@ -1,0 +1,288 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sensor Network IDS with Geolocation Tracking</title>
+    <style>
+        /* Inline CSS styling */
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            background-color: #f4f4f9;
+            color: #333;
+        }
+
+        header {
+            background-color: #333;
+            color: #fff;
+            padding: 1em;
+            text-align: center;
+        }
+
+        main {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: space-around;
+            padding: 2em;
+        }
+
+        section {
+            background-color: #fff;
+            padding: 1em;
+            margin: 10px;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            width: 45%;
+        }
+
+        h2 {
+            border-bottom: 1px solid #ddd;
+            padding-bottom: 0.5em;
+        }
+
+        #sensor-network {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        .sensor-status {
+            background-color: #eef;
+            margin: 5px;
+            padding: 10px;
+            border-radius: 5px;
+            border: 1px solid #ccc;
+            width: 100%;
+        }
+
+        .sensor-data {
+            display: flex;
+            justify-content: space-between;
+        }
+
+        .log-list, .event-list, .console-list {
+            list-style: none;
+            padding: 0;
+            margin: 10px 0;
+        }
+
+        .log-item, .event-item, .console-item {
+            padding: 5px;
+            border-bottom: 1px solid #ddd;
+        }
+
+        .threat {
+            color: red;
+            font-weight: bold;
+        }
+
+        .quarantine {
+            background-color: #faa;
+            color: red;
+            font-weight: bold;
+            padding: 5px;
+            border-radius: 5px;
+        }
+
+        #central-console {
+            background-color: #fdd;
+            border: 1px solid #f00;
+            width: 90%;
+            margin-top: 20px;
+            padding: 1em;
+        }
+
+        .console-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <h1>Sensor Network IDS with Geolocation Tracking</h1>
+    </header>
+
+    <main>
+        <!-- Central Console Section -->
+        <section id="central-console">
+            <div class="console-header">
+                <h2>Central Console: Threat Warnings & Response Actions</h2>
+                <button onclick="clearConsole()">Clear Console</button>
+            </div>
+            <ul id="console-list" class="console-list"></ul>
+        </section>
+
+        <!-- Real-time Dashboard Section -->
+        <section id="sensor-network">
+            <h2>Sensor Network Status</h2>
+            <!-- Sensor status will be dynamically added here -->
+            <div id="sensor1" class="sensor-status">
+                <h3>Sensor 1: Main Server</h3>
+                <div class="sensor-data">
+                    <p>Temperature: <span id="temp-sensor1">-</span> °C</p>
+                    <p>Bandwidth: <span id="bw-sensor1">-</span> Mbps</p>
+                    <p>Alerts: <span id="alerts-sensor1">-</span></p>
+                </div>
+                <h4>Events</h4>
+                <ul id="events-sensor1" class="event-list"></ul>
+                <h4>Logs</h4>
+                <ul id="logs-sensor1" class="log-list"></ul>
+            </div>
+            
+            <div id="sensor2" class="sensor-status">
+                <h3>Sensor 2: Firewall</h3>
+                <div class="sensor-data">
+                    <p>Temperature: <span id="temp-sensor2">-</span> °C</p>
+                    <p>Bandwidth: <span id="bw-sensor2">-</span> Mbps</p>
+                    <p>Alerts: <span id="alerts-sensor2">-</span></p>
+                </div>
+                <h4>Events</h4>
+                <ul id="events-sensor2" class="event-list"></ul>
+                <h4>Logs</h4>
+                <ul id="logs-sensor2" class="log-list"></ul>
+            </div>
+        </section>
+    </main>
+
+    <script>
+        // JavaScript for real-time data, central console, and threat response with geolocation tracking
+        document.addEventListener("DOMContentLoaded", () => {
+            const sensors = {
+                sensor1: { temperature: 0, bandwidth: 0, alerts: 0, ipAddress: "8.8.8.8" },  // Example IP
+                sensor2: { temperature: 0, bandwidth: 0, alerts: 0, ipAddress: "8.8.4.4" }   // Example IP
+            };
+
+            const thresholds = {
+                temperature: 45,  // °C
+                bandwidth: 80,    // Mbps
+                alerts: 3         // alert count
+            };
+
+            function updateSensorData(sensorId) {
+                document.getElementById(`temp-${sensorId}`).textContent = sensors[sensorId].temperature;
+                document.getElementById(`bw-${sensorId}`).textContent = sensors[sensorId].bandwidth;
+                document.getElementById(`alerts-${sensorId}`).textContent = sensors[sensorId].alerts;
+            }
+
+            function addEvent(sensorId, eventText, isThreat = false) {
+                const eventList = document.getElementById(`events-${sensorId}`);
+                const eventItem = document.createElement("li");
+                eventItem.className = "event-item";
+                eventItem.textContent = eventText;
+                if (isThreat) {
+                    eventItem.classList.add("threat");
+                    addToCentralConsole(`Threat from ${sensorId}: ${eventText}`);
+                }
+                eventList.appendChild(eventItem);
+            }
+
+            function addLog(sensorId, logText) {
+                const logList = document.getElementById(`logs-${sensorId}`);
+                const logItem = document.createElement("li");
+                logItem.className = "log-item";
+                logItem.textContent = logText;
+                logList.appendChild(logItem);
+            }
+
+            function analyzeData(sensorId) {
+                const sensor = sensors[sensorId];
+                let threatDetected = false;
+                let threatMessages = [];
+
+                // Check for high temperature
+                if (sensor.temperature > thresholds.temperature) {
+                    threatDetected = true;
+                    threatMessages.push("High temperature detected");
+                    quarantineSystem(sensorId);
+                }
+
+                // Check for high bandwidth usage
+                if (sensor.bandwidth > thresholds.bandwidth) {
+                    threatDetected = true;
+                    threatMessages.push("High bandwidth usage detected");
+                    restrictTraffic(sensorId);
+                }
+
+                // Check for frequent alerts
+                if (sensor.alerts > thresholds.alerts) {
+                    threatDetected = true;
+                    threatMessages.push("Frequent alerts detected");
+                    triggerAlert(sensorId);
+                }
+
+                if (threatDetected) {
+                    addEvent(sensorId, `Threat detected: ${threatMessages.join(", ")}`, true);
+                    getGeolocation(sensor.ipAddress, sensorId);
+                }
+            }
+
+            function addToCentralConsole(message) {
+                const consoleList = document.getElementById("console-list");
+                const consoleItem = document.createElement("li");
+                consoleItem.className = "console-item threat";
+                consoleItem.textContent = `${new Date().toLocaleTimeString()}: ${message}`;
+                consoleList.appendChild(consoleItem);
+            }
+
+            function clearConsole() {
+                const consoleList = document.getElementById("console-list");
+                consoleList.innerHTML = "";
+            }
+
+            // Response Mechanisms
+            function quarantineSystem(sensorId) {
+                const sensorDiv = document.getElementById(sensorId);
+                sensorDiv.classList.add("quarantine");
+                addToCentralConsole(`System ${sensorId} quarantined due to high temperature.`);
+            }
+
+            function restrictTraffic(sensorId) {
+                sensors[sensorId].bandwidth = (sensors[sensorId].bandwidth * 0.5).toFixed(2);  // Reduce bandwidth by 50%
+                addLog(sensorId, `Traffic restricted for ${sensorId}. Bandwidth reduced.`);
+                addToCentralConsole(`Traffic restricted for ${sensorId} due to high usage.`);
+            }
+
+            function triggerAlert(sensorId) {
+                addLog(sensorId, `Alert triggered for ${sensorId}: Frequent alerts detected.`);
+                addToCentralConsole(`Alert triggered for ${sensorId} due to frequent alerts. Immediate investigation required.`);
+            }
+
+            // Geolocation API request
+            async function getGeolocation(ip, sensorId) {
+                try {
+                    const response = await fetch(`http://ip-api.com/json/${ip}`);
+                    const data = await response.json();
+                    if (data.status === "success") {
+                        addToCentralConsole(`Geolocation for ${sensorId} (${ip}): ${data.city}, ${data.regionName}, ${data.country}.`);
+                    } else {
+                        addToCentralConsole(`Geolocation failed for ${sensorId} (${ip}): ${data.message}`);
+                    }
+                } catch (error) {
+                    addToCentralConsole(`Error retrieving geolocation for ${sensorId} (${ip}): ${error}`);
+                }
+            }
+
+            // Simulate sensor data update
+            setInterval(() => {
+                sensors.sensor1.temperature = (Math.random() * 30 + 20).toFixed(1);
+                sensors.sensor1.bandwidth = (Math.random() * 100).toFixed(2);
+                sensors.sensor1.alerts = Math.floor(Math.random() * 5);
+                updateSensorData("sensor1");
+                addLog("sensor1", `Log at ${new Date().toLocaleTimeString()}: Data updated`);
+                analyzeData("sensor1");
+
+                sensors.sensor2.temperature = (Math.random() * 30 + 20).toFixed(1);
+                sensors.sensor2.bandwidth = (Math.random() * 100).toFixed(2);
+                sensors.sensor2.alerts = Math.floor(Math.random() * 5);
+                updateSensorData("sensor2");
+                addLog("sensor2", `Log at ${new Date().toLocaleTimeString()}: Data updated`);
+                analyzeData("sensor2");
+            }, 5000);
+        });
+    </script>
+</body>
+</html>
